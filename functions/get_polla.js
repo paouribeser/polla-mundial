@@ -1,3 +1,5 @@
+import { Client } from "https://deno.land/x/postgres@v0.17.0/mod.ts";
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -17,15 +19,27 @@ export default async function handler(req) {
   }
 
   try {
-    const kv = await Deno.openKv()
-    const result = await kv.get(['polla', id.toUpperCase()])
-
-    if (!result.value) {
-      return Response.json({ error: 'Polla no encontrada' }, { status: 404, headers: corsHeaders });
+    const dbUrl = Deno.env.get('DATABASE_URL') || Deno.env.get('INSFORGE_DB_URL') || Deno.env.get('POSTGRES_URL')
+    if (!dbUrl) {
+      return Response.json({ error: 'Database not configured' }, { status: 500, headers: corsHeaders })
     }
 
-    return Response.json(result.value, { headers: corsHeaders });
+    const client = new Client(dbUrl)
+    await client.connect()
+
+    try {
+      const result = await client.queryObject`
+        SELECT * FROM public.pollas WHERE id = ${id.toUpperCase()}
+      `
+      if (result.rows.length === 0) {
+        return Response.json({ error: 'Polla no encontrada' }, { status: 404, headers: corsHeaders });
+      }
+      return Response.json(result.rows[0], { headers: corsHeaders });
+    } finally {
+      await client.end()
+    }
   } catch (e) {
+    console.error(e);
     return Response.json({ error: e.message }, { status: 500, headers: corsHeaders })
   }
 }
