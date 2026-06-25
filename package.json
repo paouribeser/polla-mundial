@@ -1,0 +1,8 @@
+{
+  "name": "polla-mundial",
+  "version": "1.0.0",
+  "description": "World Cup betting pool app",
+  "dependencies": {
+    "pg": "^8.11.3"
+  }
+}
