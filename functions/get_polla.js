@@ -6,8 +6,8 @@ export default async function handler(req) {
     return Response.json({ error: 'ID requerido' }, { status: 400 });
   }
 
-  const baseUrl = Deno.env.get('INSFORGE_URL') || 'https://m42ci5ep.us-east.insforge.app'
-  const anonKey = Deno.env.get('INSFORGE_ANON_KEY')
+  const baseUrl = Deno.env.get('INSFORGE_BASE_URL') || 'https://m42ci5ep.us-east.insforge.app'
+  const anonKey = Deno.env.get('ANON_KEY')
 
   const pollaRes = await fetch(`${baseUrl}/rest/v1/pollas?id=eq.${id.toUpperCase()}&select=id,nombre,equipoLocal,equipoVisitante,fechaPartido,cuota,estado,cierreRegistro,ordenSorteo,turnoActual,resultadoFinal,creadoEn`, {
     headers: {

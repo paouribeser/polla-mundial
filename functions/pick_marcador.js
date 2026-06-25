@@ -18,8 +18,8 @@ export default async function handler(req) {
       return Response.json({ error: 'Marcador inválido' }, { status: 400 });
     }
 
-    const baseUrl = Deno.env.get('INSFORGE_URL') || 'https://m42ci5ep.us-east.insforge.app'
-    const apiKey = Deno.env.get('INSFORGE_API_KEY')
+    const baseUrl = Deno.env.get('INSFORGE_BASE_URL') || 'https://m42ci5ep.us-east.insforge.app'
+    const apiKey = Deno.env.get('API_KEY')
 
     const pollaRes = await fetch(`${baseUrl}/rest/v1/pollas?id=eq.${id.toUpperCase()}&select=estado,ordenSorteo,turnoActual`, {
       headers: {

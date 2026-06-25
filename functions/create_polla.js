@@ -15,8 +15,8 @@ export default async function handler(req) {
     const creadorToken = Math.random().toString(36).substr(2, 24)
     const now = Date.now()
 
-    const baseUrl = Deno.env.get('INSFORGE_URL') || 'https://m42ci5ep.us-east.insforge.app'
-    const apiKey = Deno.env.get('INSFORGE_API_KEY')
+    const baseUrl = Deno.env.get('INSFORGE_BASE_URL') || 'https://m42ci5ep.us-east.insforge.app'
+    const apiKey = Deno.env.get('API_KEY')
 
     const res = await fetch(`${baseUrl}/rest/v1/pollas`, {
       method: 'POST',
