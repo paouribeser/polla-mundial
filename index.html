@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1a5c36">
+  <title>Polla del Mundial 2026 🏆</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: 100%; }
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: repeating-linear-gradient(0deg, #1a5c36 0px, #1a5c36 52px, #1e6840 52px, #1e6840 104px);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+    }
+    input, button, select { font-family: 'Nunito', sans-serif; -webkit-appearance: none; border-radius: 0; }
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    button { cursor: pointer; }
+    button:active { transform: scale(0.96); }
+    input:focus { outline: none; }
+    a { -webkit-tap-highlight-color: transparent; }
+
+    #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+    .page { width: 100%; max-width: 430px; min-height: 100vh; display: flex; flex-direction: column; padding: 0 16px 48px; }
+
+    /* ── Animations ── */
+    @keyframes fadeUp   { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeIn   { from { opacity:0; } to { opacity:1; } }
+    @keyframes spin     { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+    @keyframes glowGold { 0%,100% { box-shadow:0 4px 20px rgba(255,215,0,.35); } 50% { box-shadow:0 4px 36px rgba(255,215,0,.75); } }
+    @keyframes trophy   { 0%,100% { transform:rotate(-4deg) scale(1); } 50% { transform:rotate(4deg) scale(1.1); } }
+    @keyframes winGlow  { 0%,100% { box-shadow:0 0 0 0 rgba(255,215,0,.65); } 55% { box-shadow:0 0 0 10px rgba(255,215,0,0); } }
+    @keyframes urgentPulse { 0%,100% { color:#E53935; } 50% { color:#C62828; } }
+    @keyframes toastIn  {
+      0%   { transform:translateX(-50%) translateY(100%); opacity:0; }
+      12%  { transform:translateX(-50%) translateY(0);    opacity:1; }
+      82%  { transform:translateX(-50%) translateY(0);    opacity:1; }
+      100% { transform:translateX(-50%) translateY(100%); opacity:0; }
+    }
+    @keyframes ballPop {
+      0%   { transform:scale(0) rotate(-20deg); opacity:0; }
+      60%  { transform:scale(1.18) rotate(3deg); opacity:1; }
+      100% { transform:scale(1) rotate(0); }
+    }
+    @keyframes rowIn { from { opacity:0; transform:translateX(-10px); } to { opacity:1; transform:translateX(0); } }
+
+    /* ── Cards ── */
+    .card { background:#fff; border-radius:22px; padding:20px; box-shadow:0 12px 40px rgba(0,0,0,.28); margin-bottom:12px; animation:fadeUp .28s ease-out; }
+
+    /* ── Form controls ── */
+    .lbl { display:block; font-size:11px; font-weight:800; letter-spacing:2px; text-transform:uppercase; color:#2E7D32; margin-bottom:8px; }
+    .inp { width:100%; padding:14px 16px; border:2px solid #E8F5E9; border-radius:14px; font-size:16px; font-weight:700; color:#1B5E20; background:#F9FBE7; margin-bottom:16px; transition:border-color .2s, box-shadow .2s; }
+    .inp:focus { border-color:#43A047; box-shadow:0 0 0 3px rgba(67,160,71,.12); }
+    .inp.sm { padding:12px 14px; font-size:15px; }
+
+    /* ── Buttons ── */
+    .btn-gold  { width:100%; padding:20px; border-radius:16px; border:none; font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:3px; background:#FFD700; color:#1B5E20; animation:glowGold 2.5s ease-in-out infinite; }
+    .btn-green { width:100%; padding:18px; border-radius:14px; border:none; font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:2px; background:#1B5E20; color:#FFD700; }
+    .btn-wa    { width:100%; padding:16px; border-radius:14px; border:none; font-family:'Bebas Neue',sans-serif; font-size:19px; letter-spacing:1px; background:#25D366; color:#fff; box-shadow:0 4px 18px rgba(37,211,102,.4); display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:10px; }
+    .btn-ghost { padding:10px 22px; border-radius:20px; border:1px solid rgba(255,255,255,.25); background:transparent; color:rgba(255,255,255,.6); font-size:13px; font-weight:700; display:block; margin:12px auto 0; }
+
+    /* ── Avatar ball ── */
+    .av { border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Bebas Neue',sans-serif; color:#fff; box-shadow:0 2px 6px rgba(0,0,0,.22); flex-shrink:0; }
+
+    /* ── Toast ── */
+    #toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(100%); background:#1B5E20; color:#fff; padding:13px 26px; border-radius:40px; font-size:15px; font-weight:800; white-space:nowrap; box-shadow:0 6px 24px rgba(0,0,0,.4); z-index:9999; pointer-events:none; }
+    #toast.show { animation:toastIn 3.4s ease-in-out forwards; }
+
+    /* ── Progress bar ── */
+    .prog-wrap { background:rgba(0,0,0,.2); border-radius:8px; height:7px; margin-bottom:14px; overflow:hidden; }
+    .prog-bar  { height:100%; background:linear-gradient(90deg,#FFD700,#FFA000); border-radius:8px; transition:width .5s ease; }
+
+    /* ── Score grid ── */
+    .grid-wrap { display:grid; grid-template-columns:22px repeat(6,1fr); gap:3px; user-select:none; margin-bottom:14px; }
+    .grid-hdr  { display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:900; color:#9E9E9E; padding:2px 0; }
+    .grid-cell { position:relative; height:44px; border-radius:8px; border:2px solid; display:flex; flex-direction:column; align-items:center; justify-content:center; transition:background .12s; }
+    .grid-cell .score-line { width:10px; height:1px; margin:1px 0; }
+    .grid-cell .badge { position:absolute; top:-6px; right:-6px; width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Bebas Neue',sans-serif; font-size:7px; color:#fff; box-shadow:0 1px 4px rgba(0,0,0,.3); }
+
+    /* ── Participant row ── */
+    .p-row { display:flex; align-items:center; gap:10px; padding:9px 12px; background:#F1F8E9; border-radius:12px; margin-bottom:6px; animation:rowIn .2s ease-out; }
+
+    /* ── Order row ── */
+    .o-row { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:12px; margin-bottom:5px; }
+  </style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   CONSTANTES
+═══════════════════════════════════════════════ */
+const COLORS = ['#E53935','#1565C0','#2E7D32','#F57F17','#6A1B9A','#00838F',
+                '#AD1457','#4527A0','#D84315','#00695C','#558B2F','#0277BD'];
+
+/* ═══════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════ */
+function clr(nombre, lista) {
+  const i = (lista || []).indexOf(nombre);
+  return COLORS[Math.max(0, i) % COLORS.length];
+}
+function ini(n) { return (n || '').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase(); }
+function cop(n) { return '$' + Number(n || 0).toLocaleString('es-CO'); }
+function fmtDate(d) {
+  if (!d) return '';
+  try { return new Date(d + 'T12:00:00').toLocaleDateString('es-CO', { weekday:'long', year:'numeric', month:'long', day:'numeric' }); }
+  catch { return d; }
+}
+function fmtMs(ms) {
+  if (ms <= 0) return '00:00';
+  const s = Math.floor(ms / 1000), m = Math.floor(s / 60);
+  return String(m).padStart(2,'0') + ':' + String(s % 60).padStart(2,'0');
+}
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function q(id) { return document.getElementById(id); }
+
+/* ═══════════════════════════════════════════════
+   LOCALSTORAGE
+═══════════════════════════════════════════════ */
+function getMyP(pid)        { try { return JSON.parse(localStorage.getItem('pp_'+pid)); } catch { return null; } }
+function setMyP(pid, data)  { try { localStorage.setItem('pp_'+pid, JSON.stringify(data)); } catch {} }
+function getCT(pid)         { return localStorage.getItem('ct_'+pid) || null; }
+function setCT(pid, token)  { try { localStorage.setItem('ct_'+pid, token); } catch {} }
+
+/* ═══════════════════════════════════════════════
+   API
+═══════════════════════════════════════════════ */
+async function apiFetch(path, opts) {
+  const res = await fetch('/api/' + path, opts || {});
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Error del servidor');
+  return data;
+}
+async function apiPost(path, body) {
+  return apiFetch(path, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+}
+
+/* ═══════════════════════════════════════════════
+   ESTADO GLOBAL
+═══════════════════════════════════════════════ */
+let P = null;         // polla data (server)
+let selL = null, selV = null; // score selection
+let pTimer = null;    // polling interval
+let cdTimer = null;   // countdown interval
+let prevKey  = '';    // state change detection
+let wasMy = false;    // notification flag
+
+/* ═══════════════════════════════════════════════
+   ROUTER
+═══════════════════════════════════════════════ */
+function route() {
+  const m = location.pathname.match(/^\/polla\/([A-Za-z0-9]+)\/?$/i);
+  return m ? { page:'polla', id:m[1].toUpperCase() } : { page:'create' };
+}
+function go(path) { history.pushState({}, '', path); init(); }
+
+/* ═══════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════ */
+function toast(msg) {
+  const t = q('toast');
+  t.textContent = msg;
+  t.className = '';
+  void t.offsetWidth;
+  t.className = 'show';
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER — PIEZAS REUTILIZABLES
+═══════════════════════════════════════════════ */
+function logoHtml() {
+  return `<div style="text-align:center;padding:18px 0 20px;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:62px;color:#FFD700;line-height:1;letter-spacing:3px;text-shadow:0 3px 20px rgba(0,0,0,.5);">POLLA</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:rgba(255,255,255,.8);letter-spacing:10px;margin-top:-3px;">MUNDIAL 2026</div>
+    <div style="display:flex;justify-content:center;height:5px;width:150px;margin:10px auto 0;border-radius:3px;overflow:hidden;">
+      <div style="flex:2;background:#FFD700;"></div><div style="flex:1;background:#003893;"></div><div style="flex:1;background:#CE1126;"></div>
+    </div>
+  </div>`;
+}
+
+function partidoHtml(p) {
+  return `<div style="background:linear-gradient(135deg,#1B5E20,#2E7D32 55%,#388E3C);border-radius:16px;padding:13px 18px;margin-bottom:12px;">
+    <div style="font-size:10px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:6px;">⚽ Partido</div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="flex:1;font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;">${esc(p.equipoLocal)}</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:#FFD700;flex-shrink:0;">VS</div>
+      <div style="flex:1;font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;text-align:right;">${esc(p.equipoVisitante)}</div>
+    </div>
+    ${p.fechaPartido ? `<div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:4px;font-weight:600;">${esc(fmtDate(p.fechaPartido))}</div>` : ''}
+  </div>`;
+}
+
+function avHtml(nombre, lista, sz) {
+  const s = sz || 40, fs = Math.round(s * .4);
+  return `<div class="av" style="width:${s}px;height:${s}px;background:${clr(nombre,lista)};font-size:${fs}px;">${esc(ini(nombre))}</div>`;
+}
+
+/* ═══════════════════════════════════════════════
+   SCORE GRID (6×6)
+═══════════════════════════════════════════════ */
+function scoreGridHtml(polla, names) {
+  const elec = polla.elecciones || {};
+  let h = `<div class="grid-wrap">`;
+  h += `<div></div>`;
+  for (let v = 0; v <= 5; v++) h += `<div class="grid-hdr">${v}</div>`;
+  for (let l = 0; l <= 5; l++) {
+    h += `<div class="grid-hdr">${l}</div>`;
+    for (let v = 0; v <= 5; v++) {
+      const takenBy = Object.entries(elec).find(([,e]) => e.local===l && e.visitante===v)?.[0];
+      const taken   = !!takenBy;
+      const sel     = selL===l && selV===v;
+      const bg      = taken ? '#F0F0F0' : sel ? '#FFD700' : '#F9FBE7';
+      const bc      = taken ? '#E0E0E0' : sel ? '#E6A800' : '#C8E6C9';
+      const tc      = taken ? '#BDBDBD' : sel ? '#1B5E20' : '#2E7D32';
+      const lc      = taken ? '#E0E0E0' : sel ? '#1B5E20' : '#C8E6C9';
+      const badge   = takenBy
+        ? `<div class="badge" style="background:${clr(takenBy,names)};">${esc(ini(takenBy))}</div>` : '';
+      const click   = taken ? '' : `onclick="doSelect(${l},${v})"`;
+      h += `<div class="grid-cell" style="background:${bg};border-color:${bc};cursor:${taken?'default':'pointer'};" ${click}>
+        ${badge}
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:${tc};line-height:1;">${l}</div>
+        <div class="score-line" style="background:${lc};"></div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:${tc};line-height:1;">${v}</div>
+      </div>`;
+    }
+  }
+  h += `</div>`;
+  return h;
+}
+
+/* ═══════════════════════════════════════════════
+   VISTAS
+═══════════════════════════════════════════════ */
+
+// ── Crear Polla ──────────────────────────────
+function viewCreate() {
+  q('app').innerHTML = `<div class="page" style="animation:fadeUp .32s ease-out;">
+    ${logoHtml()}
+    <div class="card">
+      <label class="lbl">Nombre de la Polla</label>
+      <input class="inp" id="cr-nom" type="text" placeholder="Ej: Polla Familia García" value="Polla del Mundial 2026">
+
+      <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:0;">
+        <div style="flex:1;">
+          <label class="lbl">Local</label>
+          <input class="inp" id="cr-loc" type="text" placeholder="Colombia" style="margin-bottom:0;">
+        </div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#1B5E20;padding-bottom:4px;flex-shrink:0;">VS</div>
+        <div style="flex:1;">
+          <label class="lbl">Visitante</label>
+          <input class="inp" id="cr-vis" type="text" placeholder="Brasil" style="margin-bottom:0;">
+        </div>
+      </div>
+      <div style="height:14px;"></div>
+
+      <label class="lbl">Fecha del partido</label>
+      <input class="inp" id="cr-fec" type="date">
+
+      <label class="lbl">Cuota por persona (COP)</label>
+      <div style="position:relative;margin-bottom:20px;">
+        <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:18px;font-weight:900;color:#43A047;">$</span>
+        <input class="inp" id="cr-cuota" type="number" value="20000" min="0" step="5000" style="padding-left:30px;margin-bottom:0;">
+      </div>
+
+      <div style="background:linear-gradient(135deg,#1B5E20,#2E7D32);border-radius:14px;padding:13px 18px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:10px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:2px;">Registro abierto por</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;color:#FFD700;line-height:1;">30 MINUTOS</div>
+        </div>
+        <div style="font-size:36px;">⏱️</div>
+      </div>
+
+      <button class="btn-gold" id="cr-btn" onclick="doCreate()">CREAR POLLA →</button>
+      <div id="cr-err" style="text-align:center;color:#C62828;font-size:13px;font-weight:700;margin-top:10px;min-height:18px;"></div>
+    </div>
+  </div>`;
+}
+
+// ── Loading ──────────────────────────────────
+function viewLoading() {
+  q('app').innerHTML = `<div class="page" style="justify-content:center;align-items:center;">
+    ${logoHtml()}
+    <div style="text-align:center;color:rgba(255,255,255,.65);margin-top:24px;">
+      <div style="width:42px;height:42px;border:4px solid rgba(255,215,0,.25);border-top-color:#FFD700;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 14px;"></div>
+      <div style="font-size:15px;font-weight:700;">Cargando polla...</div>
+    </div>
+  </div>`;
+}
+
+// ── Not Found ────────────────────────────────
+function viewNotFound() {
+  q('app').innerHTML = `<div class="page" style="justify-content:center;align-items:center;">
+    ${logoHtml()}
+    <div class="card" style="text-align:center;margin-top:12px;">
+      <div style="font-size:52px;margin-bottom:12px;">😕</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:#1B5E20;margin-bottom:8px;">POLLA NO ENCONTRADA</div>
+      <div style="font-size:14px;color:#666;margin-bottom:20px;">El link no es válido o ya expiró.</div>
+      <button class="btn-gold" style="font-size:20px;padding:16px;" onclick="go('/')">+ CREAR NUEVA POLLA</button>
+    </div>
+  </div>`;
+}
+
+// ── Polla (router por estado) ────────────────
+function viewPolla() {
+  if (!P) return;
+  const names = P.participantes.map(p => p.nombre);
+  const myP   = getMyP(route().id);
+  const isCr  = !!getCT(route().id);
+  const key   = `${P.estado}|${P.turnoActual}|${P.participantes.length}`;
+  if (key === prevKey) return;
+  prevKey = key;
+
+  if      (P.estado === 'registro')  viewRegistro(names, myP, isCr);
+  else if (P.estado === 'eleccion')  viewEleccion(names, myP);
+  else if (P.estado === 'terminado') viewTerminado(names, myP, isCr);
+}
+
+// ── REGISTRO ─────────────────────────────────
+function viewRegistro(names, myP, isCr) {
+  const remaining = P.cierreRegistro - Date.now();
+  const shareUrl  = `${location.origin}/polla/${P.id}`;
+  const bote      = P.participantes.length * P.cuota;
+
+  const joinBlock = myP
+    ? `<div style="display:flex;align-items:center;gap:12px;background:#E8F5E9;border-radius:14px;padding:13px 16px;">
+        ${avHtml(myP.nombre, names, 46)}
+        <div>
+          <div style="font-size:11px;color:#66BB6A;font-weight:800;text-transform:uppercase;letter-spacing:1px;">¡Registrado!</div>
+          <div style="font-size:18px;font-weight:800;color:#1B5E20;">${esc(myP.nombre)}</div>
+        </div>
+        <div style="margin-left:auto;font-size:26px;">✅</div>
+      </div>`
+    : remaining > 0
+      ? `<div>
+          <div style="display:flex;gap:8px;">
+            <input class="inp" id="jn-nom" type="text" placeholder="¿Cómo te llamas?" style="margin-bottom:0;flex:1;" onkeydown="if(event.key==='Enter')doJoin()">
+            <button onclick="doJoin()" style="flex-shrink:0;width:54px;height:54px;border-radius:14px;border:none;background:#2E7D32;color:#FFD700;font-size:26px;font-weight:300;">→</button>
+          </div>
+          <div id="jn-err" style="color:#C62828;font-size:12px;font-weight:700;margin-top:6px;min-height:18px;"></div>
+        </div>`
+      : `<div style="text-align:center;padding:14px;color:#9E9E9E;font-weight:700;font-size:14px;">Registro cerrado. El sorteo comenzará pronto...</div>`;
+
+  const participantesList = P.participantes.length === 0
+    ? `<div style="text-align:center;color:#BDBDBD;font-size:14px;padding:14px 0;">Nadie se ha registrado aún</div>`
+    : P.participantes.map((p,i) => `
+        <div class="p-row">
+          ${avHtml(p.nombre, names, 38)}
+          <span style="flex:1;font-size:15px;font-weight:700;color:#1B5E20;">${esc(p.nombre)}</span>
+          <span style="font-size:12px;color:#BDBDBD;font-weight:700;">#${i+1}</span>
+        </div>`).join('');
+
+  const creadorPanel = isCr ? `
+    <div style="background:rgba(0,0,0,.15);border-radius:16px;padding:14px;margin-bottom:12px;">
+      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:rgba(255,255,255,.45);margin-bottom:10px;">Panel del Organizador</div>
+      <button class="btn-green" ${P.participantes.length < 2 ? 'disabled style="opacity:.4;cursor:not-allowed;"' : ''} onclick="doSorteo()">
+        🎱 INICIAR SORTEO AHORA
+      </button>
+      ${P.participantes.length < 2 ? '<div style="text-align:center;font-size:12px;color:rgba(255,255,255,.35);font-weight:700;margin-top:6px;">Mínimo 2 participantes</div>' : ''}
+    </div>` : '';
+
+  q('app').innerHTML = `<div class="page" style="animation:fadeUp .3s ease-out;">
+    <div style="text-align:center;padding:14px 0 12px;">
+      <div style="font-size:11px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;">${esc(P.nombre)}</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:38px;color:#FFD700;letter-spacing:2px;text-shadow:0 2px 14px rgba(0,0,0,.5);">REGISTRO ABIERTO</div>
+    </div>
+
+    ${partidoHtml(P)}
+
+    <div style="display:flex;gap:10px;margin-bottom:12px;">
+      <div style="flex:1;background:rgba(0,0,0,.2);border-radius:16px;padding:13px;text-align:center;">
+        <div style="font-size:10px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:3px;">Tiempo</div>
+        <div id="countdown" style="font-family:'Bebas Neue',sans-serif;font-size:34px;color:#FFD700;line-height:1;">${fmtMs(remaining)}</div>
+      </div>
+      <div style="flex:1;background:rgba(0,0,0,.2);border-radius:16px;padding:13px;text-align:center;">
+        <div style="font-size:10px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:3px;">Bote</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:${bote > 999999 ? '22' : '28'}px;color:#FFD700;line-height:1;">${cop(bote)}</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <label class="lbl">Regístrate para participar</label>
+      ${joinBlock}
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <label class="lbl" style="margin-bottom:0;">Inscritos</label>
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;background:#2E7D32;color:#FFD700;padding:2px 12px 3px;border-radius:20px;">${P.participantes.length}</span>
+      </div>
+      ${participantesList}
+    </div>
+
+    <button class="btn-wa" onclick="doShareRegistro()">📲 COMPARTIR LINK POR WHATSAPP</button>
+    <button onclick="doCopyLink()" style="width:100%;padding:14px;border-radius:14px;border:2px solid rgba(255,255,255,.2);background:transparent;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;color:rgba(255,255,255,.7);margin-bottom:12px;">📋 COPIAR LINK</button>
+
+    ${creadorPanel}
+  </div>`;
+
+  // Countdown updater
+  clearInterval(cdTimer);
+  cdTimer = setInterval(() => {
+    const el = q('countdown');
+    if (!el) { clearInterval(cdTimer); return; }
+    const rem = P.cierreRegistro - Date.now();
+    el.textContent = rem > 0 ? fmtMs(rem) : 'CERRADO';
+    const urgent = rem < 5 * 60 * 1000 && rem > 0;
+    el.style.animation = urgent ? 'urgentPulse 1s ease-in-out infinite' : 'none';
+    el.style.color = urgent ? '#E53935' : rem <= 0 ? '#888' : '#FFD700';
+  }, 1000);
+}
+
+// ── ELECCION ──────────────────────────────────
+function viewEleccion(names, myP) {
+  const turnoNom  = P.ordenSorteo[P.turnoActual];
+  const isMyTurn  = myP && myP.nombre === turnoNom;
+  const myElec    = myP ? P.elecciones[myP.nombre] : null;
+  const hasSel    = selL !== null && selV !== null;
+  const prog      = Math.round(P.turnoActual / P.ordenSorteo.length * 100);
+
+  // Turn notification
+  if (isMyTurn && !wasMy) { wasMy = true; setTimeout(() => toast('🎯 ¡Es tu turno! Elige tu marcador'), 400); }
+  if (!isMyTurn) wasMy = false;
+
+  // Order list
+  const orderRows = P.ordenSorteo.map((nom, i) => {
+    const e     = P.elecciones[nom];
+    const cur   = i === P.turnoActual;
+    const done  = i < P.turnoActual;
+    const bg    = cur ? '#FFF9C4' : done ? '#F1F8E9' : '#F8F8F8';
+    const marcador = e
+      ? `<span style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#FFD700;background:#1B5E20;padding:2px 10px 3px;border-radius:16px;line-height:1.5;">${e.local}-${e.visitante}</span>`
+      : cur
+        ? `<span style="font-size:11px;font-weight:800;color:#E65100;">ELIGIENDO...</span>`
+        : `<span style="font-size:11px;color:#BDBDBD;font-weight:700;">pendiente</span>`;
+    return `<div class="o-row" style="background:${bg};${cur ? 'border:2px solid #FFD700;' : ''}">
+      ${avHtml(nom, names, 34)}
+      <span style="flex:1;font-size:13px;font-weight:700;color:#1B5E20;min-width:0;word-break:break-word;">${esc(nom)}</span>
+      ${marcador}
+    </div>`;
+  }).join('');
+
+  // Main panel depending on role
+  let mainPanel = '';
+
+  if (!myP) {
+    mainPanel = `<div class="card" style="text-align:center;padding:24px 20px;">
+      <div style="font-size:36px;margin-bottom:10px;">👀</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#1B5E20;margin-bottom:6px;">ESTÁS VIENDO LA POLLA</div>
+      <div style="font-size:13px;color:#888;font-weight:600;">El registro ya cerró. Espera mientras todos eligen.</div>
+    </div>`;
+  } else if (myElec) {
+    const nextNom = P.estado === 'eleccion' ? turnoNom : null;
+    const waNext  = nextNom ? `https://wa.me/?text=${encodeURIComponent(
+      `🎱 *${P.nombre}*\n⚽ ${P.equipoLocal} vs ${P.equipoVisitante}\n\nYa elegí mi marcador ✅\nAhora es el turno de *${nextNom}*!\n👉 ${location.origin}/polla/${P.id}`
+    )}` : '#';
+    mainPanel = `<div class="card">
+      <div style="text-align:center;padding:8px 0 14px;">
+        <div style="font-size:34px;margin-bottom:8px;">✅</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#1B5E20;margin-bottom:10px;">YA ELEGISTE</div>
+        <div style="display:inline-flex;gap:14px;align-items:center;background:#1B5E20;border-radius:14px;padding:10px 22px;">
+          <span style="font-size:11px;color:rgba(255,255,255,.5);font-weight:700;">${esc(P.equipoLocal)}</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:38px;color:#FFD700;letter-spacing:2px;">${myElec.local} — ${myElec.visitante}</span>
+          <span style="font-size:11px;color:rgba(255,255,255,.5);font-weight:700;">${esc(P.equipoVisitante)}</span>
+        </div>
+      </div>
+      ${nextNom ? `<div style="background:#F0FBF4;border-radius:12px;padding:12px 14px;margin-top:10px;text-align:center;">
+        <div style="font-size:12px;font-weight:800;color:#2E7D32;margin-bottom:8px;">Ahora le toca a <strong>${esc(nextNom)}</strong></div>
+        <a href="${waNext}" target="_blank" class="btn-wa" style="text-decoration:none;font-size:17px;padding:12px 20px;display:flex;justify-content:center;align-items:center;gap:8px;border-radius:12px;">📲 AVISAR A ${esc(nextNom.split(' ')[0].toUpperCase())}</a>
+      </div>` : ''}
+    </div>`;
+  } else if (isMyTurn) {
+    mainPanel = `<div class="card">
+      <div style="display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#1B5E20,#2E7D32 60%,#388E3C);border-radius:16px;padding:12px 14px;margin-bottom:16px;">
+        ${avHtml(myP.nombre, names, 48)}
+        <div>
+          <div style="font-size:10px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;">¡Tu turno!</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:#fff;line-height:1;">${esc(myP.nombre)}</div>
+        </div>
+        <div style="margin-left:auto;font-size:38px;line-height:1;">🎯</div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px;padding:0 2px;">
+        <div style="font-size:10px;font-weight:800;color:#2E7D32;text-transform:uppercase;letter-spacing:1px;">${esc(P.equipoLocal)} ↓</div>
+        <div style="font-size:10px;font-weight:800;color:#2E7D32;text-transform:uppercase;letter-spacing:1px;">${esc(P.equipoVisitante)} →</div>
+      </div>
+
+      <div id="grid-wrap">${scoreGridHtml(P, names)}</div>
+
+      <div style="background:#F9FBE7;border-radius:12px;padding:11px 16px;margin:10px 0;display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:#9E9E9E;">Tu elección</div>
+        <div id="sel-disp" style="font-family:'Bebas Neue',sans-serif;font-size:30px;color:${hasSel ? '#1B5E20' : '#D0D0D0'};letter-spacing:2px;">${hasSel ? `${selL} — ${selV}` : '? — ?'}</div>
+      </div>
+
+      <button id="confirm-btn" onclick="doConfirm()"
+        style="width:100%;padding:18px;border-radius:14px;border:none;font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;background:#FFD700;color:#1B5E20;opacity:${hasSel?1:.38};cursor:${hasSel?'pointer':'not-allowed'};">
+        CONFIRMAR ✓
+      </button>
+    </div>`;
+  } else {
+    const waNotify = `https://wa.me/?text=${encodeURIComponent(
+      `🎱 *${P.nombre}*\n⚽ ${P.equipoLocal} vs ${P.equipoVisitante}\n\nEs el turno de *${turnoNom}*! Entra y elige:\n👉 ${location.origin}/polla/${P.id}`
+    )}`;
+    mainPanel = `<div class="card" style="text-align:center;padding:20px;">
+      <div style="font-size:32px;margin-bottom:8px;">⏳</div>
+      <div style="font-size:11px;color:#9E9E9E;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Esperando...</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#1B5E20;margin-bottom:10px;">ES EL TURNO DE</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px;">
+        ${avHtml(turnoNom, names, 44)}
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:#1B5E20;">${esc(turnoNom)}</div>
+      </div>
+      <a href="${waNotify}" target="_blank" class="btn-wa" style="text-decoration:none;display:flex;justify-content:center;align-items:center;gap:8px;font-size:17px;padding:13px 20px;border-radius:12px;">
+        📲 AVISAR A ${esc(turnoNom.split(' ')[0].toUpperCase())}
+      </a>
+    </div>`;
+  }
+
+  q('app').innerHTML = `<div class="page" style="animation:fadeUp .3s ease-out;">
+    <div style="text-align:center;padding:12px 0 10px;">
+      <div style="font-size:11px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;">${esc(P.nombre)}</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:#FFD700;letter-spacing:2px;text-shadow:0 2px 12px rgba(0,0,0,.5);">ELIGE TU MARCADOR</div>
+    </div>
+
+    ${partidoHtml(P)}
+
+    <div class="prog-wrap"><div class="prog-bar" style="width:${prog}%;"></div></div>
+
+    ${mainPanel}
+
+    <div class="card">
+      <label class="lbl" style="margin-bottom:10px;">Orden de elección (${P.turnoActual}/${P.ordenSorteo.length})</label>
+      ${orderRows}
+    </div>
+  </div>`;
+}
+
+// ── TERMINADO ─────────────────────────────────
+function viewTerminado(names, myP, isCr) {
+  const res     = P.resultadoFinal;
+  const hasRes  = res && typeof res.local === 'number' && typeof res.visitante === 'number';
+  const bote    = P.participantes.length * P.cuota;
+
+  const rows = P.ordenSorteo.map((nom, i) => {
+    const m   = P.elecciones[nom];
+    const win = hasRes && m && m.local === res.local && m.visitante === res.visitante;
+    return { nom, m, win, i };
+  }).sort((a,b) => a.win === b.win ? a.i - b.i : a.win ? -1 : 1);
+
+  const tableRows = rows.map((r, ri) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;
+      background:${r.win ? '#FFFDE7' : ri%2===0 ? '#F9FBE7' : '#fff'};
+      border:2px solid ${r.win ? '#FFD700' : 'transparent'};
+      border-radius:12px;margin-bottom:5px;
+      ${r.win ? 'animation:winGlow 1.8s ease-in-out infinite;' : ''}">
+      ${avHtml(r.nom, names, 38)}
+      <span style="flex:1;font-size:14px;font-weight:800;color:#1B5E20;min-width:0;word-break:break-word;">${esc(r.nom)}</span>
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#1B5E20;flex-shrink:0;">${r.m ? `${r.m.local}-${r.m.visitante}` : '-'}</span>
+      ${r.win ? '<span style="font-size:20px;flex-shrink:0;margin-left:4px;">🏆</span>' : ''}
+    </div>`).join('');
+
+  const ganador = rows.find(r => r.win);
+  const shareLines = [
+    `🏆 *${P.nombre}*`,
+    `⚽ ${P.equipoLocal} vs ${P.equipoVisitante}`,
+    hasRes ? `\n🔢 Resultado: *${res.local}-${res.visitante}*` : '',
+    `💰 Bote: ${cop(bote)}`,
+    '',
+    '📋 Marcadores:',
+    ...P.ordenSorteo.map((n,i) => { const m = P.elecciones[n]; return `${i+1}. ${n}: ${m ? `${m.local}-${m.visitante}` : '-'}`; }),
+    ganador ? `\n🏆 Ganador: *${ganador.nom}* con ${ganador.m.local}-${ganador.m.visitante}` : '',
+  ].filter(Boolean).join('\n');
+
+  const resultadoBlock = isCr
+    ? `<div class="card">
+        <label class="lbl">Resultado real del partido</label>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="flex:1;text-align:center;">
+            <div style="font-size:11px;font-weight:800;color:#666;margin-bottom:5px;">${esc(P.equipoLocal)}</div>
+            <input type="number" id="res-l" value="${res?.local ?? ''}" min="0" max="20" placeholder="0"
+              style="width:100%;padding:12px 8px;border:2px solid #E8F5E9;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:40px;color:#1B5E20;text-align:center;background:#F9FBE7;">
+          </div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:40px;color:#DDD;flex-shrink:0;">—</div>
+          <div style="flex:1;text-align:center;">
+            <div style="font-size:11px;font-weight:800;color:#666;margin-bottom:5px;">${esc(P.equipoVisitante)}</div>
+            <input type="number" id="res-v" value="${res?.visitante ?? ''}" min="0" max="20" placeholder="0"
+              style="width:100%;padding:12px 8px;border:2px solid #E8F5E9;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:40px;color:#1B5E20;text-align:center;background:#F9FBE7;">
+          </div>
+        </div>
+        <button class="btn-green" style="margin-top:14px;" onclick="doResultado()">GUARDAR RESULTADO</button>
+      </div>`
+    : hasRes
+      ? `<div class="card" style="text-align:center;">
+          <div style="font-size:11px;font-weight:800;color:#2E7D32;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">Resultado del Partido</div>
+          <div style="display:inline-flex;gap:16px;align-items:center;background:#1B5E20;border-radius:14px;padding:12px 28px;">
+            <span style="font-size:11px;color:rgba(255,255,255,.5);font-weight:700;">${esc(P.equipoLocal)}</span>
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:46px;color:#FFD700;letter-spacing:3px;">${res.local} — ${res.visitante}</span>
+            <span style="font-size:11px;color:rgba(255,255,255,.5);font-weight:700;">${esc(P.equipoVisitante)}</span>
+          </div>
+        </div>`
+      : `<div class="card" style="text-align:center;padding:20px;">
+          <div style="font-size:13px;color:#BDBDBD;font-weight:700;">El organizador aún no ha ingresado el resultado.</div>
+        </div>`;
+
+  q('app').innerHTML = `<div class="page" style="animation:fadeUp .3s ease-out;">
+    <div style="text-align:center;padding:12px 0 14px;">
+      <div style="font-size:44px;animation:trophy 1.2s ease-in-out infinite;">🏆</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;color:#FFD700;letter-spacing:2px;margin-top:6px;text-shadow:0 3px 18px rgba(0,0,0,.5);">${esc(P.nombre)}</div>
+      <div style="font-size:14px;color:rgba(255,255,255,.7);font-weight:700;margin-top:4px;">${esc(P.equipoLocal)} vs ${esc(P.equipoVisitante)}</div>
+      <div style="display:inline-block;background:rgba(0,0,0,.2);border-radius:14px;padding:9px 22px;margin-top:12px;">
+        <div style="font-size:10px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:2px;font-weight:700;margin-bottom:1px;">Bote</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:#FFD700;line-height:1;">${cop(bote)}</div>
+      </div>
+    </div>
+
+    ${resultadoBlock}
+
+    <div class="card">
+      <label class="lbl" style="margin-bottom:12px;">Tabla de la Polla</label>
+      ${tableRows}
+    </div>
+
+    <button class="btn-wa" onclick="doShareFinal()">📲 COMPARTIR RESULTADOS</button>
+    <button onclick="go('/')" style="width:100%;padding:14px;border-radius:14px;border:2px solid rgba(255,255,255,.2);background:transparent;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:rgba(255,255,255,.7);">+ NUEVA POLLA</button>
+  </div>`;
+
+  // Store share text globally for doShareFinal
+  window._shareText = shareLines;
+}
+
+/* ═══════════════════════════════════════════════
+   HANDLERS
+═══════════════════════════════════════════════ */
+
+async function doCreate() {
+  const nom   = (q('cr-nom')?.value || '').trim();
+  const loc   = (q('cr-loc')?.value || '').trim();
+  const vis   = (q('cr-vis')?.value || '').trim();
+  const fec   = q('cr-fec')?.value || '';
+  const cuota = parseInt(q('cr-cuota')?.value) || 20000;
+  const errEl = q('cr-err');
+
+  if (!nom || !loc || !vis) {
+    if (errEl) errEl.textContent = 'Completa el nombre y ambos equipos';
+    return;
+  }
+  const btn = q('cr-btn');
+  if (btn) { btn.textContent = 'CREANDO...'; btn.disabled = true; }
+  if (errEl) errEl.textContent = '';
+
+  try {
+    const data = await apiPost('create', { nombre:nom, equipoLocal:loc, equipoVisitante:vis, fechaPartido:fec, cuota });
+    setCT(data.id, data.creadorToken);
+    toast('✅ ¡Polla creada!');
+    go('/polla/' + data.id);
+  } catch(e) {
+    if (errEl) errEl.textContent = e.message;
+    if (btn) { btn.textContent = 'CREAR POLLA →'; btn.disabled = false; }
+  }
+}
+
+async function doJoin() {
+  const rid   = route().id;
+  const nom   = (q('jn-nom')?.value || '').trim();
+  const errEl = q('jn-err');
+  if (!nom) { if (errEl) errEl.textContent = 'Escribe tu nombre'; return; }
+
+  const btn = document.querySelector('[onclick="doJoin()"]');
+  if (btn) btn.disabled = true;
+  if (errEl) errEl.textContent = '';
+
+  try {
+    const data = await apiPost('polla/' + rid, { action:'join', nombre:nom });
+    setMyP(rid, { token:data.token, nombre:data.nombre });
+    toast('✅ ¡Registrado como ' + data.nombre + '!');
+    P = await apiFetch('polla/' + rid);
+    prevKey = '';
+    viewPolla();
+  } catch(e) {
+    if (errEl) errEl.textContent = e.message;
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function doSorteo() {
+  const rid = route().id;
+  const ct  = getCT(rid);
+  if (!ct || !P || P.participantes.length < 2) return;
+  try {
+    await apiPost('polla/' + rid, { action:'sorteo', token:ct });
+    toast('🎱 ¡Sorteo realizado!');
+    P = await apiFetch('polla/' + rid);
+    prevKey = ''; selL = null; selV = null; wasMy = false;
+    viewPolla();
+  } catch(e) { toast('Error: ' + e.message); }
+}
+
+function doSelect(l, v) {
+  if (!P) return;
+  const taken = Object.values(P.elecciones || {}).find(e => e.local===l && e.visitante===v);
+  if (taken) return;
+  selL = l; selV = v;
+  const gw = q('grid-wrap');
+  if (gw) {
+    const names = P.participantes.map(p => p.nombre);
+    gw.innerHTML = scoreGridHtml(P, names);
+  }
+  const sd = q('sel-disp');
+  if (sd) { sd.textContent = `${l} — ${v}`; sd.style.color = '#1B5E20'; }
+  const cb = q('confirm-btn');
+  if (cb) { cb.style.opacity = '1'; cb.style.cursor = 'pointer'; cb.disabled = false; }
+}
+
+async function doConfirm() {
+  const rid = route().id;
+  const myP = getMyP(rid);
+  if (!myP || selL === null || selV === null) return;
+  const btn = q('confirm-btn');
+  if (btn) { btn.textContent = 'CONFIRMANDO...'; btn.disabled = true; }
+  try {
+    await apiPost('polla/' + rid, { action:'pick', token:myP.token, local:selL, visitante:selV });
+    toast(`✅ Marcador ${selL}-${selV} confirmado!`);
+    selL = null; selV = null;
+    P = await apiFetch('polla/' + rid);
+    prevKey = '';
+    viewPolla();
+  } catch(e) {
+    toast('❌ ' + e.message);
+    if (btn) { btn.textContent = 'CONFIRMAR ✓'; btn.disabled = false; }
+  }
+}
+
+async function doResultado() {
+  const rid = route().id;
+  const ct  = getCT(rid);
+  if (!ct) return;
+  const l = parseInt(q('res-l')?.value), v = parseInt(q('res-v')?.value);
+  if (isNaN(l) || isNaN(v)) { toast('Ingresa el resultado completo'); return; }
+  try {
+    await apiPost('polla/' + rid, { action:'resultado', token:ct, local:l, visitante:v });
+    toast('✅ Resultado guardado');
+    P = await apiFetch('polla/' + rid);
+    prevKey = '';
+    viewPolla();
+  } catch(e) { toast('Error: ' + e.message); }
+}
+
+function doShareRegistro() {
+  if (!P) return;
+  const rem = P.cierreRegistro - Date.now();
+  const msg = `🏆 *${P.nombre}*\n⚽ ${P.equipoLocal} vs ${P.equipoVisitante}${P.fechaPartido ? '\n📅 ' + fmtDate(P.fechaPartido) : ''}\n💰 Cuota: ${cop(P.cuota)}\n\n⏱️ Tienes *${fmtMs(rem)}* para inscribirte!\n👉 ${location.origin}/polla/${P.id}`;
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+}
+
+function doCopyLink() {
+  const url = `${location.origin}/polla/${P?.id || ''}`;
+  navigator.clipboard?.writeText(url)
+    .then(() => toast('📋 Link copiado!'))
+    .catch(() => { prompt('Copia este link:', url); });
+}
+
+function doShareFinal() {
+  const text = window._shareText;
+  if (!text) return;
+  window.open('https://wa.me/?text=' + encodeURIComponent(Array.isArray(text) ? text.join('\n') : text), '_blank');
+}
+
+/* ═══════════════════════════════════════════════
+   POLLING
+═══════════════════════════════════════════════ */
+async function doPoll(id) {
+  try {
+    const fresh = await apiFetch('polla/' + id);
+    const autoSorteo = fresh.estado === 'registro'
+      && Date.now() >= fresh.cierreRegistro
+      && fresh.participantes.length >= 2;
+    if (autoSorteo) {
+      await apiPost('polla/' + id, { action:'sorteo', token: getCT(id) || '' });
+      P = await apiFetch('polla/' + id);
+    } else {
+      P = fresh;
+    }
+    const newKey = `${P.estado}|${P.turnoActual}|${P.participantes.length}`;
+    if (newKey !== prevKey) viewPolla();
+  } catch {}
+}
+
+/* ═══════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════ */
+async function init() {
+  clearInterval(pTimer);
+  clearInterval(cdTimer);
+  prevKey = ''; wasMy = false; selL = null; selV = null;
+
+  const r = route();
+
+  if (r.page === 'create') {
+    P = null;
+    viewCreate();
+    return;
+  }
+
+  viewLoading();
+  try {
+    P = await apiFetch('polla/' + r.id);
+
+    // Auto-sorteo si ya venció el tiempo
+    if (P.estado === 'registro' && Date.now() >= P.cierreRegistro && P.participantes.length >= 2) {
+      await apiPost('polla/' + r.id, { action:'sorteo', token: getCT(r.id) || '' });
+      P = await apiFetch('polla/' + r.id);
+    }
+
+    viewPolla();
+    pTimer = setInterval(() => doPoll(r.id), 5000);
+  } catch(e) {
+    if (e.message.includes('encontrada') || e.message.includes('404')) viewNotFound();
+    else {
+      q('app').innerHTML = `<div class="page" style="justify-content:center;align-items:center;text-align:center;gap:16px;">
+        ${logoHtml()}
+        <div style="color:rgba(255,255,255,.65);font-size:14px;font-weight:700;margin-top:16px;">${esc(e.message)}</div>
+        <button class="btn-ghost" onclick="init()">Reintentar</button>
+      </div>`;
+    }
+  }
+}
+
+window.addEventListener('popstate', init);
+init();
+</script>
+</body>
+</html>
