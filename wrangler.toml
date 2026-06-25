@@ -1,7 +1,0 @@
-name = "polla-mundial"
-compatibility_date = "2024-01-01"
-
-[[kv_namespaces]]
-binding = "POLLAS"
-id = "db1eb884b30b4ed3a881e38daed0c6d6"
-preview_id = "db1eb884b30b4ed3a881e38daed0c6d6"
