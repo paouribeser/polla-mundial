@@ -658,7 +658,7 @@ async function doCreate() {
   if (errEl) errEl.textContent = '';
 
   try {
-    const data = await apiPost('create_polla', { nombre:nom, equipoLocal:loc, equipoVisitante:vis, fechaPartido:fec, cuota });
+    const data = await apiPost('create', { nombre:nom, equipoLocal:loc, equipoVisitante:vis, fechaPartido:fec, cuota });
     setCT(data.id, data.creadorToken);
     toast('✅ ¡Polla creada!');
     go('/polla/' + data.id);
