@@ -16,43 +16,16 @@ export default async function handler(req) {
     return Response.json({ error: 'ID requerido' }, { status: 400, headers: corsHeaders });
   }
 
-  const baseUrl = Deno.env.get('INSFORGE_BASE_URL') || 'https://m42ci5ep.us-east.insforge.app'
-  const anonKey = Deno.env.get('ANON_KEY')
+  try {
+    const kv = await Deno.openKv()
+    const result = await kv.get(['polla', id.toUpperCase()])
 
-  const pollaRes = await fetch(`${baseUrl}/rest/v1/pollas?id=eq.${id.toUpperCase()}&select=id,nombre,equipoLocal,equipoVisitante,fechaPartido,cuota,estado,cierreRegistro,ordenSorteo,turnoActual,resultadoFinal,creadoEn`, {
-    headers: {
-      'Authorization': `Bearer ${anonKey}`,
-      'Content-Type': 'application/json'
+    if (!result.value) {
+      return Response.json({ error: 'Polla no encontrada' }, { status: 404, headers: corsHeaders });
     }
-  });
 
-  const pollas = await pollaRes.json();
-  if (!pollas || pollas.length === 0) {
-    return Response.json({ error: 'Polla no encontrada' }, { status: 404, headers: corsHeaders });
+    return Response.json(result.value, { headers: corsHeaders });
+  } catch (e) {
+    return Response.json({ error: e.message }, { status: 500, headers: corsHeaders })
   }
-
-  const polla = pollas[0];
-
-  const particRes = await fetch(`${baseUrl}/rest/v1/participantes?pollaId=eq.${id.toUpperCase()}&select=nombre,orden`, {
-    headers: {
-      'Authorization': `Bearer ${anonKey}`,
-      'Content-Type': 'application/json'
-    }
-  });
-
-  const elecRes = await fetch(`${baseUrl}/rest/v1/elecciones?pollaId=eq.${id.toUpperCase()}&select=nombre,local,visitante`, {
-    headers: {
-      'Authorization': `Bearer ${anonKey}`,
-      'Content-Type': 'application/json'
-    }
-  });
-
-  const participantes = await particRes.json();
-  const elecciones = await elecRes.json();
-
-  return Response.json({
-    ...polla,
-    participantes: participantes || [],
-    elecciones: elecciones || []
-  }, { headers: corsHeaders });
 }

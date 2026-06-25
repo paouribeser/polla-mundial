@@ -28,86 +28,40 @@ export default async function handler(req) {
       return Response.json({ error: 'Marcador inválido' }, { status: 400, headers: corsHeaders });
     }
 
-    const baseUrl = Deno.env.get('INSFORGE_BASE_URL') || 'https://m42ci5ep.us-east.insforge.app'
-    const apiKey = Deno.env.get('API_KEY')
+    const kv = await Deno.openKv()
+    const result = await kv.get(['polla', id.toUpperCase()])
 
-    const pollaRes = await fetch(`${baseUrl}/rest/v1/pollas?id=eq.${id.toUpperCase()}&select=estado,ordenSorteo,turnoActual`, {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    const pollas = await pollaRes.json();
-    if (!pollas || pollas.length === 0) {
+    if (!result.value) {
       return Response.json({ error: 'Polla no encontrada' }, { status: 404, headers: corsHeaders });
     }
 
-    const polla = pollas[0];
+    const polla = result.value;
+
     if (polla.estado !== 'eleccion') {
       return Response.json({ error: 'No es momento de elegir' }, { status: 400, headers: corsHeaders });
     }
 
-    const partRes = await fetch(`${baseUrl}/rest/v1/participantes?pollaId=eq.${id.toUpperCase()}&token=eq.${token}&select=nombre,id`, {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    const participantes = await partRes.json();
-    if (!participantes || participantes.length === 0) {
+    const participante = polla.participantes.find(p => p.token === token);
+    if (!participante) {
       return Response.json({ error: 'Token inválido' }, { status: 403, headers: corsHeaders });
     }
 
-    const participante = participantes[0];
     if (participante.nombre !== polla.ordenSorteo[polla.turnoActual]) {
       return Response.json({ error: 'No es tu turno' }, { status: 400, headers: corsHeaders });
     }
 
-    const elecRes = await fetch(`${baseUrl}/rest/v1/elecciones?pollaId=eq.${id.toUpperCase()}&local=eq.${local_n}&visitante=eq.${vis_n}`, {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    const elecciones = await elecRes.json();
-    if (elecciones && elecciones.length > 0) {
-      return Response.json({
-        error: `Marcador tomado por ${elecciones[0].nombre}`
-      }, { status: 400, headers: corsHeaders });
+    const taken = Object.entries(polla.elecciones).find(([_, e]) => e.local === local_n && e.visitante === vis_n);
+    if (taken) {
+      return Response.json({ error: `Marcador tomado por ${taken[0]}` }, { status: 400, headers: corsHeaders });
     }
 
-    await fetch(`${baseUrl}/rest/v1/elecciones`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        pollaId: id.toUpperCase(),
-        participanteId: participante.id,
-        nombre: participante.nombre,
-        local: local_n,
-        visitante: vis_n
-      })
-    });
+    polla.elecciones[participante.nombre] = { local: local_n, visitante: vis_n };
+    const idx = polla.participantes.findIndex(p => p.token === token);
+    polla.participantes[idx].eleccion = { local: local_n, visitante: vis_n };
+    polla.turnoActual += 1;
+    if (polla.turnoActual >= polla.ordenSorteo.length) polla.estado = 'terminado';
 
-    const newTurno = polla.turnoActual + 1;
-    const newEstado = newTurno >= polla.ordenSorteo.length ? 'terminado' : 'eleccion';
-
-    await fetch(`${baseUrl}/rest/v1/pollas?id=eq.${id.toUpperCase()}`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        turnoActual: newTurno,
-        estado: newEstado
-      })
-    });
+    await kv.set(['polla', id.toUpperCase()], polla)
 
     return Response.json({ ok: true }, { headers: corsHeaders });
   } catch (e) {

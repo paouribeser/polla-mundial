@@ -21,56 +21,27 @@ export default async function handler(req) {
       return Response.json({ error: 'ID y nombre requeridos' }, { status: 400, headers: corsHeaders });
     }
 
-    const baseUrl = Deno.env.get('INSFORGE_BASE_URL') || 'https://m42ci5ep.us-east.insforge.app'
-    const apiKey = Deno.env.get('API_KEY')
+    const kv = await Deno.openKv()
+    const result = await kv.get(['polla', id.toUpperCase()])
 
-    const pollaRes = await fetch(`${baseUrl}/rest/v1/pollas?id=eq.${id.toUpperCase()}&select=estado`, {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    const pollas = await pollaRes.json();
-    if (!pollas || pollas.length === 0) {
+    if (!result.value) {
       return Response.json({ error: 'Polla no encontrada' }, { status: 404, headers: corsHeaders });
     }
 
-    if (pollas[0].estado !== 'registro') {
+    const polla = result.value;
+
+    if (polla.estado !== 'registro') {
       return Response.json({ error: 'Registro cerrado' }, { status: 400, headers: corsHeaders });
     }
 
-    const existRes = await fetch(`${baseUrl}/rest/v1/participantes?pollaId=eq.${id.toUpperCase()}&nombre=eq.${encodeURIComponent(nombre.trim())}`, {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    const existing = await existRes.json();
-    if (existing && existing.length > 0) {
+    if (polla.participantes.find(p => p.nombre.toLowerCase() === nombre.toLowerCase())) {
       return Response.json({ error: 'Nombre duplicado' }, { status: 400, headers: corsHeaders });
     }
 
     const token = Math.random().toString(36).substr(2, 24);
+    polla.participantes.push({ nombre: nombre.trim(), token, orden: null });
 
-    const insertRes = await fetch(`${baseUrl}/rest/v1/participantes`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        pollaId: id.toUpperCase(),
-        nombre: nombre.trim(),
-        token
-      })
-    });
-
-    if (!insertRes.ok) {
-      const error = await insertRes.text();
-      return Response.json({ error }, { status: insertRes.status, headers: corsHeaders });
-    }
+    await kv.set(['polla', id.toUpperCase()], polla)
 
     return Response.json({ token, nombre: nombre.trim() }, { headers: corsHeaders });
   } catch (e) {

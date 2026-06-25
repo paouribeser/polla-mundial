@@ -21,22 +21,16 @@ export default async function handler(req) {
       return Response.json({ error: 'Parámetros requeridos' }, { status: 400, headers: corsHeaders });
     }
 
-    const baseUrl = Deno.env.get('INSFORGE_BASE_URL') || 'https://m42ci5ep.us-east.insforge.app'
-    const apiKey = Deno.env.get('API_KEY')
+    const kv = await Deno.openKv()
+    const result = await kv.get(['polla', id.toUpperCase()])
 
-    const pollaRes = await fetch(`${baseUrl}/rest/v1/pollas?id=eq.${id.toUpperCase()}&select=creadorToken`, {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    const pollas = await pollaRes.json();
-    if (!pollas || pollas.length === 0) {
+    if (!result.value) {
       return Response.json({ error: 'Polla no encontrada' }, { status: 404, headers: corsHeaders });
     }
 
-    if (token !== pollas[0].creadorToken) {
+    const polla = result.value;
+
+    if (token !== polla.creadorToken) {
       return Response.json({ error: 'No autorizado' }, { status: 403, headers: corsHeaders });
     }
 
@@ -47,16 +41,9 @@ export default async function handler(req) {
       return Response.json({ error: 'Resultado inválido' }, { status: 400, headers: corsHeaders });
     }
 
-    const resultadoFinal = { local: local_n, visitante: vis_n };
+    polla.resultadoFinal = { local: local_n, visitante: vis_n };
 
-    await fetch(`${baseUrl}/rest/v1/pollas?id=eq.${id.toUpperCase()}`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ resultadoFinal })
-    });
+    await kv.set(['polla', id.toUpperCase()], polla)
 
     return Response.json({ ok: true }, { headers: corsHeaders });
   } catch (e) {

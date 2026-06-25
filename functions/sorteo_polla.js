@@ -21,63 +21,30 @@ export default async function handler(req) {
       return Response.json({ error: 'ID requerido' }, { status: 400, headers: corsHeaders });
     }
 
-    const baseUrl = Deno.env.get('INSFORGE_BASE_URL') || 'https://m42ci5ep.us-east.insforge.app'
-    const apiKey = Deno.env.get('API_KEY')
+    const kv = await Deno.openKv()
+    const result = await kv.get(['polla', id.toUpperCase()])
 
-    const pollaRes = await fetch(`${baseUrl}/rest/v1/pollas?id=eq.${id.toUpperCase()}&select=estado`, {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    const pollas = await pollaRes.json();
-    if (!pollas || pollas.length === 0) {
+    if (!result.value) {
       return Response.json({ error: 'Polla no encontrada' }, { status: 404, headers: corsHeaders });
     }
 
-    if (pollas[0].estado !== 'registro') {
+    const polla = result.value;
+
+    if (polla.estado !== 'registro') {
       return Response.json({ ok: true }, { headers: corsHeaders });
     }
 
-    const particRes = await fetch(`${baseUrl}/rest/v1/participantes?pollaId=eq.${id.toUpperCase()}&select=nombre`, {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    const participantes = await particRes.json();
-    if (!participantes || participantes.length < 2) {
+    if (polla.participantes.length < 2) {
       return Response.json({ error: 'Mínimo 2 participantes' }, { status: 400, headers: corsHeaders });
     }
 
-    const shuffled = [...participantes].sort(() => Math.random() - 0.5);
-    const ordenSorteo = shuffled.map(p => p.nombre);
+    const shuffled = [...polla.participantes].sort(() => Math.random() - 0.5);
+    polla.participantes = shuffled.map((p, i) => ({ ...p, orden: i + 1 }));
+    polla.ordenSorteo = shuffled.map(p => p.nombre);
+    polla.estado = 'eleccion';
+    polla.turnoActual = 0;
 
-    await fetch(`${baseUrl}/rest/v1/pollas?id=eq.${id.toUpperCase()}`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        estado: 'eleccion',
-        ordenSorteo,
-        turnoActual: 0
-      })
-    });
-
-    for (let i = 0; i < shuffled.length; i++) {
-      await fetch(`${baseUrl}/rest/v1/participantes?pollaId=eq.${id.toUpperCase()}&nombre=eq.${encodeURIComponent(shuffled[i].nombre)}`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ orden: i + 1 })
-      });
-    }
+    await kv.set(['polla', id.toUpperCase()], polla)
 
     return Response.json({ ok: true }, { headers: corsHeaders });
   } catch (e) {
