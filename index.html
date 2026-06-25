@@ -138,7 +138,16 @@ function setCT(pid, token)  { try { localStorage.setItem('ct_'+pid, token); } ca
 const INSFORGE_URL = 'https://m42ci5ep.function2.insforge.app';
 
 async function apiFetch(path, opts) {
-  const url = path.startsWith('http') ? path : INSFORGE_URL + '/' + path;
+  let url;
+  if (path.startsWith('http')) {
+    url = path;
+  } else if (path.startsWith('get_polla') || path.startsWith('create_polla') || path.startsWith('join_polla') || path.startsWith('sorteo_polla') || path.startsWith('pick_marcador') || path.startsWith('resultado_polla')) {
+    // Functions endpoint
+    const funcName = path.split('?')[0];
+    url = INSFORGE_URL + '/' + funcName + (path.includes('?') ? '?' + path.split('?')[1] : '');
+  } else {
+    url = INSFORGE_URL + '/' + path;
+  }
   const res = await fetch(url, opts || {});
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Error del servidor');
