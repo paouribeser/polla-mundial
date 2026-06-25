@@ -135,8 +135,11 @@ function setCT(pid, token)  { try { localStorage.setItem('ct_'+pid, token); } ca
 /* ═══════════════════════════════════════════════
    API
 ═══════════════════════════════════════════════ */
+const INSFORGE_URL = 'https://m42ci5ep.function2.insforge.app';
+
 async function apiFetch(path, opts) {
-  const res = await fetch('/api/' + path, opts || {});
+  const url = path.startsWith('http') ? path : INSFORGE_URL + '/' + path;
+  const res = await fetch(url, opts || {});
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Error del servidor');
   return data;
@@ -657,7 +660,7 @@ async function doCreate() {
   if (errEl) errEl.textContent = '';
 
   try {
-    const data = await apiPost('create', { nombre:nom, equipoLocal:loc, equipoVisitante:vis, fechaPartido:fec, cuota });
+    const data = await apiPost('create_polla', { nombre:nom, equipoLocal:loc, equipoVisitante:vis, fechaPartido:fec, cuota });
     setCT(data.id, data.creadorToken);
     toast('✅ ¡Polla creada!');
     go('/polla/' + data.id);
@@ -678,10 +681,10 @@ async function doJoin() {
   if (errEl) errEl.textContent = '';
 
   try {
-    const data = await apiPost('polla/' + rid, { action:'join', nombre:nom });
+    const data = await apiPost('join_polla', { id:rid, nombre:nom });
     setMyP(rid, { token:data.token, nombre:data.nombre });
     toast('✅ ¡Registrado como ' + data.nombre + '!');
-    P = await apiFetch('polla/' + rid);
+    P = await apiFetch('get_polla?id=' + rid);
     prevKey = '';
     viewPolla();
   } catch(e) {
@@ -695,9 +698,9 @@ async function doSorteo() {
   const ct  = getCT(rid);
   if (!ct || !P || P.participantes.length < 2) return;
   try {
-    await apiPost('polla/' + rid, { action:'sorteo', token:ct });
+    await apiPost('sorteo_polla', { id:rid });
     toast('🎱 ¡Sorteo realizado!');
-    P = await apiFetch('polla/' + rid);
+    P = await apiFetch('get_polla?id=' + rid);
     prevKey = ''; selL = null; selV = null; wasMy = false;
     viewPolla();
   } catch(e) { toast('Error: ' + e.message); }
@@ -726,10 +729,10 @@ async function doConfirm() {
   const btn = q('confirm-btn');
   if (btn) { btn.textContent = 'CONFIRMANDO...'; btn.disabled = true; }
   try {
-    await apiPost('polla/' + rid, { action:'pick', token:myP.token, local:selL, visitante:selV });
+    await apiPost('pick_marcador', { id:rid, token:myP.token, local:selL, visitante:selV });
     toast(`✅ Marcador ${selL}-${selV} confirmado!`);
     selL = null; selV = null;
-    P = await apiFetch('polla/' + rid);
+    P = await apiFetch('get_polla?id=' + rid);
     prevKey = '';
     viewPolla();
   } catch(e) {
@@ -745,9 +748,9 @@ async function doResultado() {
   const l = parseInt(q('res-l')?.value), v = parseInt(q('res-v')?.value);
   if (isNaN(l) || isNaN(v)) { toast('Ingresa el resultado completo'); return; }
   try {
-    await apiPost('polla/' + rid, { action:'resultado', token:ct, local:l, visitante:v });
+    await apiPost('resultado_polla', { id:rid, token:ct, local:l, visitante:v });
     toast('✅ Resultado guardado');
-    P = await apiFetch('polla/' + rid);
+    P = await apiFetch('get_polla?id=' + rid);
     prevKey = '';
     viewPolla();
   } catch(e) { toast('Error: ' + e.message); }
@@ -778,13 +781,13 @@ function doShareFinal() {
 ═══════════════════════════════════════════════ */
 async function doPoll(id) {
   try {
-    const fresh = await apiFetch('polla/' + id);
+    const fresh = await apiFetch('get_polla?id=' + id);
     const autoSorteo = fresh.estado === 'registro'
       && Date.now() >= fresh.cierreRegistro
       && fresh.participantes.length >= 2;
     if (autoSorteo) {
-      await apiPost('polla/' + id, { action:'sorteo', token: getCT(id) || '' });
-      P = await apiFetch('polla/' + id);
+      await apiPost('sorteo_polla', { id:id });
+      P = await apiFetch('get_polla?id=' + id);
     } else {
       P = fresh;
     }
@@ -815,8 +818,8 @@ async function init() {
 
     // Auto-sorteo si ya venció el tiempo
     if (P.estado === 'registro' && Date.now() >= P.cierreRegistro && P.participantes.length >= 2) {
-      await apiPost('polla/' + r.id, { action:'sorteo', token: getCT(r.id) || '' });
-      P = await apiFetch('polla/' + r.id);
+      await apiPost('sorteo_polla', { id:r.id });
+      P = await apiFetch('get_polla?id=' + r.id);
     }
 
     viewPolla();
