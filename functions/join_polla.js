@@ -1,3 +1,5 @@
+import { Client } from "https://deno.land/x/postgres@v0.17.0/mod.ts";
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -21,30 +23,38 @@ export default async function handler(req) {
       return Response.json({ error: 'ID y nombre requeridos' }, { status: 400, headers: corsHeaders });
     }
 
-    const kv = await Deno.openKv()
-    const result = await kv.get(['polla', id.toUpperCase()])
-
-    if (!result.value) {
-      return Response.json({ error: 'Polla no encontrada' }, { status: 404, headers: corsHeaders });
+    const dbUrl = Deno.env.get('DATABASE_URL')
+    if (!dbUrl) {
+      return Response.json({ error: 'Database not configured' }, { status: 500, headers: corsHeaders })
     }
 
-    const polla = result.value;
+    const client = new Client(dbUrl)
+    await client.connect()
 
-    if (polla.estado !== 'registro') {
-      return Response.json({ error: 'Registro cerrado' }, { status: 400, headers: corsHeaders });
+    try {
+      const polla = await client.queryObject`SELECT estado FROM public.pollas WHERE id = ${id.toUpperCase()}`
+      if (polla.rows.length === 0) {
+        return Response.json({ error: 'Polla no encontrada' }, { status: 404, headers: corsHeaders });
+      }
+
+      if (polla.rows[0].estado !== 'registro') {
+        return Response.json({ error: 'Registro cerrado' }, { status: 400, headers: corsHeaders });
+      }
+
+      const existing = await client.queryObject`SELECT nombre FROM public.participantes WHERE pollaId = ${id.toUpperCase()} AND LOWER(nombre) = LOWER(${nombre.trim()})`
+      if (existing.rows.length > 0) {
+        return Response.json({ error: 'Nombre duplicado' }, { status: 400, headers: corsHeaders });
+      }
+
+      const token = Math.random().toString(36).substr(2, 24);
+      await client.queryObject`INSERT INTO public.participantes (pollaId, nombre, token) VALUES (${id.toUpperCase()}, ${nombre.trim()}, ${token})`
+
+      return Response.json({ token, nombre: nombre.trim() }, { headers: corsHeaders });
+    } finally {
+      await client.end()
     }
-
-    if (polla.participantes.find(p => p.nombre.toLowerCase() === nombre.toLowerCase())) {
-      return Response.json({ error: 'Nombre duplicado' }, { status: 400, headers: corsHeaders });
-    }
-
-    const token = Math.random().toString(36).substr(2, 24);
-    polla.participantes.push({ nombre: nombre.trim(), token, orden: null });
-
-    await kv.set(['polla', id.toUpperCase()], polla)
-
-    return Response.json({ token, nombre: nombre.trim() }, { headers: corsHeaders });
   } catch (e) {
+    console.error(e);
     return Response.json({ error: e.message }, { status: 500, headers: corsHeaders });
   }
 }

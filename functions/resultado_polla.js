@@ -1,3 +1,5 @@
+import { Client } from "https://deno.land/x/postgres@v0.17.0/mod.ts";
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -21,32 +23,40 @@ export default async function handler(req) {
       return Response.json({ error: 'Parámetros requeridos' }, { status: 400, headers: corsHeaders });
     }
 
-    const kv = await Deno.openKv()
-    const result = await kv.get(['polla', id.toUpperCase()])
-
-    if (!result.value) {
-      return Response.json({ error: 'Polla no encontrada' }, { status: 404, headers: corsHeaders });
+    const dbUrl = Deno.env.get('DATABASE_URL')
+    if (!dbUrl) {
+      return Response.json({ error: 'Database not configured' }, { status: 500, headers: corsHeaders })
     }
 
-    const polla = result.value;
+    const client = new Client(dbUrl)
+    await client.connect()
 
-    if (token !== polla.creadorToken) {
-      return Response.json({ error: 'No autorizado' }, { status: 403, headers: corsHeaders });
+    try {
+      const polla = await client.queryObject`SELECT creadorToken FROM public.pollas WHERE id = ${id.toUpperCase()}`
+      if (polla.rows.length === 0) {
+        return Response.json({ error: 'Polla no encontrada' }, { status: 404, headers: corsHeaders });
+      }
+
+      if (token !== polla.rows[0].creadorToken) {
+        return Response.json({ error: 'No autorizado' }, { status: 403, headers: corsHeaders });
+      }
+
+      const local_n = parseInt(local);
+      const vis_n = parseInt(visitante);
+
+      if (isNaN(local_n) || isNaN(vis_n)) {
+        return Response.json({ error: 'Resultado inválido' }, { status: 400, headers: corsHeaders });
+      }
+
+      const resultadoFinal = JSON.stringify({ local: local_n, visitante: vis_n });
+      await client.queryObject`UPDATE public.pollas SET resultadoFinal = ${resultadoFinal} WHERE id = ${id.toUpperCase()}`
+
+      return Response.json({ ok: true }, { headers: corsHeaders });
+    } finally {
+      await client.end()
     }
-
-    const local_n = parseInt(local);
-    const vis_n = parseInt(visitante);
-
-    if (isNaN(local_n) || isNaN(vis_n)) {
-      return Response.json({ error: 'Resultado inválido' }, { status: 400, headers: corsHeaders });
-    }
-
-    polla.resultadoFinal = { local: local_n, visitante: vis_n };
-
-    await kv.set(['polla', id.toUpperCase()], polla)
-
-    return Response.json({ ok: true }, { headers: corsHeaders });
   } catch (e) {
+    console.error(e);
     return Response.json({ error: e.message }, { status: 500, headers: corsHeaders });
   }
 }

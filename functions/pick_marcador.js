@@ -1,3 +1,5 @@
+import { Client } from "https://deno.land/x/postgres@v0.17.0/mod.ts";
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -28,43 +30,52 @@ export default async function handler(req) {
       return Response.json({ error: 'Marcador inválido' }, { status: 400, headers: corsHeaders });
     }
 
-    const kv = await Deno.openKv()
-    const result = await kv.get(['polla', id.toUpperCase()])
-
-    if (!result.value) {
-      return Response.json({ error: 'Polla no encontrada' }, { status: 404, headers: corsHeaders });
+    const dbUrl = Deno.env.get('DATABASE_URL')
+    if (!dbUrl) {
+      return Response.json({ error: 'Database not configured' }, { status: 500, headers: corsHeaders })
     }
 
-    const polla = result.value;
+    const client = new Client(dbUrl)
+    await client.connect()
 
-    if (polla.estado !== 'eleccion') {
-      return Response.json({ error: 'No es momento de elegir' }, { status: 400, headers: corsHeaders });
+    try {
+      const polla = await client.queryObject`SELECT estado, ordenSorteo, turnoActual FROM public.pollas WHERE id = ${id.toUpperCase()}`
+      if (polla.rows.length === 0) {
+        return Response.json({ error: 'Polla no encontrada' }, { status: 404, headers: corsHeaders });
+      }
+
+      const p = polla.rows[0];
+      if (p.estado !== 'eleccion') {
+        return Response.json({ error: 'No es momento de elegir' }, { status: 400, headers: corsHeaders });
+      }
+
+      const part = await client.queryObject`SELECT nombre FROM public.participantes WHERE pollaId = ${id.toUpperCase()} AND token = ${token}`
+      if (part.rows.length === 0) {
+        return Response.json({ error: 'Token inválido' }, { status: 403, headers: corsHeaders });
+      }
+
+      const orden = JSON.parse(p.ordenSorteo);
+      if (part.rows[0].nombre !== orden[p.turnoActual]) {
+        return Response.json({ error: 'No es tu turno' }, { status: 400, headers: corsHeaders });
+      }
+
+      const taken = await client.queryObject`SELECT nombre FROM public.elecciones WHERE pollaId = ${id.toUpperCase()} AND local = ${local_n} AND visitante = ${vis_n}`
+      if (taken.rows.length > 0) {
+        return Response.json({ error: `Marcador tomado por ${taken.rows[0].nombre}` }, { status: 400, headers: corsHeaders });
+      }
+
+      await client.queryObject`INSERT INTO public.elecciones (pollaId, nombre, local, visitante) VALUES (${id.toUpperCase()}, ${part.rows[0].nombre}, ${local_n}, ${vis_n})`
+
+      const newTurno = p.turnoActual + 1;
+      const newEstado = newTurno >= orden.length ? 'terminado' : 'eleccion';
+      await client.queryObject`UPDATE public.pollas SET turnoActual = ${newTurno}, estado = ${newEstado} WHERE id = ${id.toUpperCase()}`
+
+      return Response.json({ ok: true }, { headers: corsHeaders });
+    } finally {
+      await client.end()
     }
-
-    const participante = polla.participantes.find(p => p.token === token);
-    if (!participante) {
-      return Response.json({ error: 'Token inválido' }, { status: 403, headers: corsHeaders });
-    }
-
-    if (participante.nombre !== polla.ordenSorteo[polla.turnoActual]) {
-      return Response.json({ error: 'No es tu turno' }, { status: 400, headers: corsHeaders });
-    }
-
-    const taken = Object.entries(polla.elecciones).find(([_, e]) => e.local === local_n && e.visitante === vis_n);
-    if (taken) {
-      return Response.json({ error: `Marcador tomado por ${taken[0]}` }, { status: 400, headers: corsHeaders });
-    }
-
-    polla.elecciones[participante.nombre] = { local: local_n, visitante: vis_n };
-    const idx = polla.participantes.findIndex(p => p.token === token);
-    polla.participantes[idx].eleccion = { local: local_n, visitante: vis_n };
-    polla.turnoActual += 1;
-    if (polla.turnoActual >= polla.ordenSorteo.length) polla.estado = 'terminado';
-
-    await kv.set(['polla', id.toUpperCase()], polla)
-
-    return Response.json({ ok: true }, { headers: corsHeaders });
   } catch (e) {
+    console.error(e);
     return Response.json({ error: e.message }, { status: 500, headers: corsHeaders });
   }
 }
