@@ -1,0 +1,11 @@
+{
+  "routes": [
+    {
+      "pattern": "/api/*"
+    },
+    {
+      "pattern": "/functions/*"
+    }
+  ],
+  "version": 1
+}
