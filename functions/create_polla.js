@@ -1,6 +1,16 @@
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+};
+
 export default async function handler(req) {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
   if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 })
+    return new Response('Method not allowed', { status: 405, headers: corsHeaders })
   }
 
   try {
@@ -41,11 +51,11 @@ export default async function handler(req) {
 
     if (!res.ok) {
       const error = await res.text()
-      return Response.json({ error }, { status: res.status })
+      return Response.json({ error }, { status: res.status, headers: corsHeaders })
     }
 
-    return Response.json({ id, creadorToken })
+    return Response.json({ id, creadorToken }, { headers: corsHeaders })
   } catch (e) {
-    return Response.json({ error: e.message }, { status: 500 })
+    return Response.json({ error: e.message }, { status: 500, headers: corsHeaders })
   }
 }

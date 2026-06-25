@@ -1,6 +1,16 @@
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+};
+
 export default async function handler(req) {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
   if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 });
+    return new Response('Method not allowed', { status: 405, headers: corsHeaders });
   }
 
   try {
@@ -8,7 +18,7 @@ export default async function handler(req) {
     const { id } = body;
 
     if (!id) {
-      return Response.json({ error: 'ID requerido' }, { status: 400 });
+      return Response.json({ error: 'ID requerido' }, { status: 400, headers: corsHeaders });
     }
 
     const baseUrl = Deno.env.get('INSFORGE_BASE_URL') || 'https://m42ci5ep.us-east.insforge.app'
@@ -23,11 +33,11 @@ export default async function handler(req) {
 
     const pollas = await pollaRes.json();
     if (!pollas || pollas.length === 0) {
-      return Response.json({ error: 'Polla no encontrada' }, { status: 404 });
+      return Response.json({ error: 'Polla no encontrada' }, { status: 404, headers: corsHeaders });
     }
 
     if (pollas[0].estado !== 'registro') {
-      return Response.json({ ok: true });
+      return Response.json({ ok: true }, { headers: corsHeaders });
     }
 
     const particRes = await fetch(`${baseUrl}/rest/v1/participantes?pollaId=eq.${id.toUpperCase()}&select=nombre`, {
@@ -39,7 +49,7 @@ export default async function handler(req) {
 
     const participantes = await particRes.json();
     if (!participantes || participantes.length < 2) {
-      return Response.json({ error: 'Mínimo 2 participantes' }, { status: 400 });
+      return Response.json({ error: 'Mínimo 2 participantes' }, { status: 400, headers: corsHeaders });
     }
 
     const shuffled = [...participantes].sort(() => Math.random() - 0.5);
@@ -69,8 +79,8 @@ export default async function handler(req) {
       });
     }
 
-    return Response.json({ ok: true });
+    return Response.json({ ok: true }, { headers: corsHeaders });
   } catch (e) {
-    return Response.json({ error: e.message }, { status: 500 });
+    return Response.json({ error: e.message }, { status: 500, headers: corsHeaders });
   }
 }
