@@ -1,7 +1,13 @@
 {
+  "buildCommand": "echo 'Static build'",
+  "outputDirectory": ".",
   "rewrites": [
     {
-      "source": "/(?!api/)(.*)",
+      "source": "/polla/:id",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/",
       "destination": "/index.html"
     }
   ]
