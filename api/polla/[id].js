@@ -7,7 +7,8 @@ export default function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const { id } = req.query;
+  // Extract ID from URL path
+  const id = req.url.split('/').pop()?.split('?')[0];
   const polla = global.pollas[id?.toUpperCase()];
 
   if (!polla) return res.status(404).json({ error: 'Polla no encontrada' });
