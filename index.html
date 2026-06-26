@@ -812,7 +812,7 @@ async function init() {
 
   viewLoading();
   try {
-    P = await apiFetch('polla/' + r.id);
+    P = await apiFetch('polla?id=' + r.id);
 
     // Auto-sorteo si ya venció el tiempo
     if (P.estado === 'registro' && Date.now() >= P.cierreRegistro && P.participantes.length >= 2) {
